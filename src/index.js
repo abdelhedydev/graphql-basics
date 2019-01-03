@@ -33,6 +33,7 @@ type Mutation{
   deletePost(id: ID!): Post!
 
   createComment(input: createCommentInput): Comment!
+  deleteComment(id: ID!): Comment!
 }
 
 
@@ -149,8 +150,13 @@ const resolvers = {
       comments = comments.filter(comment => comment.post !== args.id)
       // Removing the Post
       const deletedPost = posts.splice(postIndex, 1)
-      console.log('deletedpost', deletedPost)
       return deletedPost[0]
+    },
+    deleteComment: (parent, args, ctx, info) => {
+      const commentIndex = comments.findIndex(comment => comment.id === args.id)
+      if (commentIndex === -1) throw new Error('comment does not exist !!')
+      const deletedComment = comments.splice(commentIndex, 1)
+      return deletedComment[0]
     }
   },
   Post: {
