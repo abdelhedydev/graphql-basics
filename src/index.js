@@ -1,4 +1,5 @@
 import { GraphQLServer } from 'graphql-yoga'
+import uuidv4 from 'uuid/v4'
 
 const posts = [
   { id: '1', title: 'Post number 1 title ', body: 'Post number 1 body', published: true, author: '1' },
@@ -24,19 +25,24 @@ type Query {
   users: [User!]!
   comments:[Comment!]!
 }
+type Mutation{
+  createUser(name:String!,email: String!,age:Int): User!
+  createPost(title: String!,body: String!, published: Boolean,author: String!): Post!
+  createComment(text: String!, post: String!, author: String!): Comment!
+}
 type User{
   id: ID!
   name: String!
   email: String!
-  age : Int
+  age: Int
   posts:[Post!]!
   comments:[Comment!]
 }
 type Post{
   id: ID!
   title: String!
-  body : String!
-  published :Boolean
+  body: String!
+  published: Boolean
   author: User!
   comments: [Comment!]
 }
@@ -55,6 +61,47 @@ const resolvers = {
     posts: (_, { query }) => query ? posts.filter(post => post.title.toLowerCase().includes(query) || post.body.includes(query)) : posts,
     users: () => users,
     comments: () => comments
+  },
+  Mutation: {
+    createUser: (parent, args, cx, info) => {
+      const emailTaken = users.some(user => user.email === args.email)
+      if (emailTaken) throw new Error('This email is already used')
+      const newuser = {
+        id: uuidv4(),
+        name: args.name,
+        email: args.email,
+        age: args.age
+      }
+      users.push(newuser)
+      return newuser
+    },
+    createPost: (parent, args, ctx, info) => {
+      const userExist = users.some(user => user.id === args.author)
+      if (!userExist) throw new Error('User does not exist !')
+      const post = {
+        id: uuidv4(),
+        title: args.title,
+        body: args.body,
+        published: args.published,
+        author: args.author
+      }
+      posts.push(post)
+      return post
+    },
+    createComment: (parent, args, ctx, info) => {
+      const userExist = users.some(user => user.id === args.author)
+      const postExist = posts.some(post => post.id === args.post)
+      const isPublished = (posts.find(post => post.id === args.post).published)
+      if (!userExist || !postExist || !isPublished) throw new Error('Input Error was founded')
+      const newComment = {
+        id: uuidv4(),
+        text: args.text,
+        author: args.author,
+        post: args.post
+      }
+      comments.push(newComment)
+      return newComment
+    }
   },
   Post: {
     author: (parent, args, ctx, info) => users.find((user) => user.id === parent.author),
