@@ -1,9 +1,19 @@
 import { GraphQLServer } from 'graphql-yoga'
 
 const posts = [
-  { id: 'jsdfsdf4521sdf', title: 'Post number 1 title ', body: 'Post number 1 body', published: true },
-  { id: 'jsdfsdsdfsf4521sdf', title: 'Post number 2 title', body: 'Post number 2 body', published: false },
-  { id: 'jsdfsdfsdf4521sdf', title: 'Post number 3 title', body: 'Post number 3 body', published: true }
+  { id: '1', title: 'Post number 1 title ', body: 'Post number 1 body', published: true, author: '1' },
+  { id: '2', title: 'Post number 2 title', body: 'Post number 2 body', published: false, author: '3' },
+  { id: '3', title: 'Post number 3 title', body: 'Post number 3 body', published: true, author: '1' }
+]
+const users = [
+  { id: '1', name: 'abdelhedi', email: 'sjkjdfnksdf', age: 15 },
+  { id: '2', name: 'Mohammed', email: 'sjkjdfnksdf', age: 15 },
+  { id: '3', name: 'Emir', email: 'sjkjdfnksdf', age: 15 }
+]
+const comments = [
+  { id: '1', text: 'This is awesome ! i really like it ;) !', author: '2', post: '3' },
+  { id: '2', text: 'Nice bro :D !', author: '1', post: '3' },
+  { id: '3', text: 'Goooooooooooooooooood', author: '2', post: '1' }
 ]
 const typeDefs = `
 type Query {
@@ -11,18 +21,30 @@ type Query {
   Post: Post!
   add(x:Int!,y:Int!): Float!
   posts(query:String): [Post!]!
+  users: [User!]!
+  comments:[Comment!]!
 }
 type User{
   id: ID!
   name: String!
   email: String!
   age : Int
+  posts:[Post!]!
+  comments:[Comment!]
 }
 type Post{
   id: ID!
   title: String!
   body : String!
   published :Boolean
+  author: User!
+  comments: [Comment!]
+}
+type Comment{
+  id: ID!
+  text: String!
+  author: User!
+  post: Post!
 }
 `
 const resolvers = {
@@ -30,7 +52,21 @@ const resolvers = {
     me: () => ({ id: '54df5g4d5fg4d5f4gdfg', name: 'abdelhedi', email: 'sjkjdfnksdf', age: 15 }),
     Post: () => ({ id: '1245dsd45dfgsdf', title: 'Article title', body: 'This is tje content of the Article' }),
     add: (_, { x, y }) => (x + y) * 10,
-    posts: (_, { query }) => posts.filter(post => post.title.toLowerCase().includes(query) || post.body.includes(query))
+    posts: (_, { query }) => query ? posts.filter(post => post.title.toLowerCase().includes(query) || post.body.includes(query)) : posts,
+    users: () => users,
+    comments: () => comments
+  },
+  Post: {
+    author: (parent, args, ctx, info) => users.find((user) => user.id === parent.author),
+    comments: (parent, args, ctx, info) => comments.filter((comment) => comment.post === parent.id)
+  },
+  User: {
+    posts: (parent, args, ctx, info) => posts.filter((post) => post.author === parent.id),
+    comments: (parent, args, ctx, info) => comments.filter((comment) => comment.author === parent.id)
+  },
+  Comment: {
+    author: (parent, args, ctx, info) => users.find((user) => user.id === parent.author),
+    post: (parent, args, ctx, info) => posts.find(post => post.id === parent.post)
   }
 }
 const server = new GraphQLServer({ typeDefs, resolvers })
