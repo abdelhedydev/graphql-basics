@@ -1,17 +1,17 @@
 import { GraphQLServer } from 'graphql-yoga'
 import uuidv4 from 'uuid/v4'
 
-const posts = [
+let posts = [
   { id: '1', title: 'Post number 1 title ', body: 'Post number 1 body', published: true, author: '1' },
   { id: '2', title: 'Post number 2 title', body: 'Post number 2 body', published: false, author: '3' },
   { id: '3', title: 'Post number 3 title', body: 'Post number 3 body', published: true, author: '1' }
 ]
-const users = [
+let users = [
   { id: '1', name: 'abdelhedi', email: 'sjkjdfnksdf', age: 15 },
   { id: '2', name: 'Mohammed', email: 'sjkjdfnksdf', age: 15 },
   { id: '3', name: 'Emir', email: 'sjkjdfnksdf', age: 15 }
 ]
-const comments = [
+let comments = [
   { id: '1', text: 'This is awesome ! i really like it ;) !', author: '2', post: '3' },
   { id: '2', text: 'Nice bro :D !', author: '1', post: '3' },
   { id: '3', text: 'Goooooooooooooooooood', author: '2', post: '1' }
@@ -26,10 +26,33 @@ type Query {
   comments:[Comment!]!
 }
 type Mutation{
-  createUser(name:String!,email: String!,age:Int): User!
-  createPost(title: String!,body: String!, published: Boolean,author: String!): Post!
-  createComment(text: String!, post: String!, author: String!): Comment!
+  createUser(input: createUserInput): User!
+  createPost(input: createPostInput): Post!
+  createComment(input: createCommentInput): Comment!
+  deleteUser(id: ID!): User!
 }
+
+
+
+input createUserInput {
+  name:String!
+  email: String!
+  age:Int
+}
+input createPostInput {
+  title: String!
+  body: String!
+  published: Boolean
+  author: String!
+}
+input createCommentInput{
+  text: String!
+  post: String!
+  author: String!
+}
+
+
+
 type User{
   id: ID!
   name: String!
@@ -64,43 +87,57 @@ const resolvers = {
   },
   Mutation: {
     createUser: (parent, args, cx, info) => {
-      const emailTaken = users.some(user => user.email === args.email)
+      const emailTaken = users.some(user => user.email === args.input.email)
       if (emailTaken) throw new Error('This email is already used')
       const newuser = {
         id: uuidv4(),
-        name: args.name,
-        email: args.email,
-        age: args.age
+        ...args.input
       }
       users.push(newuser)
       return newuser
     },
     createPost: (parent, args, ctx, info) => {
-      const userExist = users.some(user => user.id === args.author)
+      const userExist = users.some(user => user.id === args.input.author)
       if (!userExist) throw new Error('User does not exist !')
       const post = {
         id: uuidv4(),
-        title: args.title,
-        body: args.body,
-        published: args.published,
-        author: args.author
+        ...args.input
       }
       posts.push(post)
       return post
     },
     createComment: (parent, args, ctx, info) => {
-      const userExist = users.some(user => user.id === args.author)
-      const postExist = posts.some(post => post.id === args.post)
-      const isPublished = (posts.find(post => post.id === args.post).published)
+      const userExist = users.some(user => user.id === args.input.author)
+      const postExist = posts.some(post => post.id === args.input.post)
+      const isPublished = (posts.find(post => post.id === args.input.post).published)
       if (!userExist || !postExist || !isPublished) throw new Error('Input Error was founded')
       const newComment = {
         id: uuidv4(),
-        text: args.text,
-        author: args.author,
-        post: args.post
+        ...args.input
       }
       comments.push(newComment)
       return newComment
+    },
+    deleteUser: (parent, args, ctx, info) => {
+      const user = users.find(user => user.id === args.id)
+      if (user.length < 1) {
+        throw new Error('Oh user does not exist')
+      }
+      // Removing user comments
+      comments = comments.filter(comment => comment.author !== args.id)
+
+      // Removing user posts
+      posts = posts.filter((post) => {
+        const match = post.author === args.id
+        if (match) {
+          comments = comments.filter(comment => comment.post !== post.id)
+        }
+        return !match
+      })
+
+      // Removing user from users
+      users = users.filter(u => u.id !== user.id)
+      return user
     }
   },
   Post: {
