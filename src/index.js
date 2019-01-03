@@ -27,9 +27,12 @@ type Query {
 }
 type Mutation{
   createUser(input: createUserInput): User!
-  createPost(input: createPostInput): Post!
-  createComment(input: createCommentInput): Comment!
   deleteUser(id: ID!): User!
+
+  createPost(input: createPostInput): Post!
+  deletePost(id: ID!): Post!
+
+  createComment(input: createCommentInput): Comment!
 }
 
 
@@ -138,6 +141,16 @@ const resolvers = {
       // Removing user from users
       users = users.filter(u => u.id !== user.id)
       return user
+    },
+    deletePost: (parent, args, ctx, info) => {
+      const postIndex = posts.findIndex(post => post.id === args.id)
+      if (postIndex === -1) throw new Error('Post does not exist')
+      // Removing post Comments
+      comments = comments.filter(comment => comment.post !== args.id)
+      // Removing the Post
+      const deletedPost = posts.splice(postIndex, 1)
+      console.log('deletedpost', deletedPost)
+      return deletedPost[0]
     }
   },
   Post: {
