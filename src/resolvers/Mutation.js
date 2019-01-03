@@ -11,6 +11,21 @@ const Mutattion = {
     db.users.push(newuser)
     return newuser
   },
+  updateUser: (parent, args, { db }, info) => {
+    const { id, data } = args
+    const user = db.users.find(user => user.id === id)
+    if (!user) throw new Error('User does not exist')
+    if (typeof data.email === 'string') {
+      user.email = data.email
+    }
+    if (typeof data.name === 'string') {
+      user.name = data.name
+    }
+    if (data.age > 0) {
+      user.age = data.age
+    }
+    return user
+  },
   createPost: (parent, args, { db }, info) => {
     const userExist = db.users.some(user => user.id === args.input.author)
     if (!userExist) throw new Error('User does not exist !')
@@ -19,6 +34,15 @@ const Mutattion = {
       ...args.input
     }
     db.posts.push(post)
+    return post
+  },
+  updatePost: (parent, args, { db }, info) => {
+    const { id, data } = args
+    const post = db.posts.find(post => post.id === id)
+    if (!post) throw new Error('Post does not exist')
+    if (data.title) post.title = data.title
+    if (data.body) post.body = data.body
+    if (data.published) post.published = data.published
     return post
   },
   createComment: (parent, args, { db }, info) => {
