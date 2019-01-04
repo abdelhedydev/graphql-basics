@@ -47,7 +47,7 @@ const Mutattion = {
     users = users.filter(u => u.id !== user.id)
     return user
   },
-  createPost: (parent, args, { db }, info) => {
+  createPost: (parent, args, { db, pubsub }, info) => {
     const userExist = db.users.some(user => user.id === args.input.author)
     if (!userExist) throw new Error('User does not exist !')
     const post = {
@@ -55,25 +55,44 @@ const Mutattion = {
       ...args.input
     }
     db.posts.push(post)
+    pubsub.publish('Post',
+      {
+        post: {
+          mutation: 'CREATED',
+          data: post
+        }
+      })
     return post
   },
-  updatePost: (parent, args, { db }, info) => {
+  updatePost: (parent, args, { db, pubsub }, info) => {
     const { id, data } = args
     const post = db.posts.find(post => post.id === id)
     if (!post) throw new Error('Post does not exist')
     if (data.title) post.title = data.title
     if (data.body) post.body = data.body
     if (data.published) post.published = data.published
+    pubsub.publish('Post', {
+      post: {
+        mutation: 'UPDATED',
+        data: post
+      }
+    })
     return post
   },
-  deletePost: (parent, args, { db }, info) => {
+  deletePost: (parent, args, { db, pubsub }, info) => {
     const postIndex = db.posts.findIndex(post => post.id === args.id)
     if (postIndex === -1) throw new Error('Post does not exist')
     // Removing post Comments
     db.comments = db.comments.filter(comment => comment.post !== args.id)
     // Removing the Post
-    const deletedPost = db.posts.splice(postIndex, 1)
-    return deletedPost[0]
+    const [deletedPost] = db.posts.splice(postIndex, 1)
+    pubsub.publish('Post', {
+      post: {
+        mutation: 'DELETED',
+        data: deletedPost
+      }
+    })
+    return deletedPost
   },
   createComment: (parent, args, { db, pubsub }, info) => {
     const { users, posts, comments } = db
@@ -86,22 +105,38 @@ const Mutattion = {
       ...args.input
     }
     comments.push(newComment)
-
-    pubsub.publish(`Comment ${args.input.post}`, { comment: newComment })
+    pubsub.publish('Comment', {
+      comment: {
+        mutation: 'CREATED',
+        data: newComment
+      }
+    })
     return newComment
   },
-  deleteComment: (parent, args, { db: { comments } }, info) => {
+  deleteComment: (parent, args, { db: { comments }, pubsub }, info) => {
     const commentIndex = comments.findIndex(comment => comment.id === args.id)
     if (commentIndex === -1) throw new Error('comment does not exist !!')
-    const deletedComment = comments.splice(commentIndex, 1)
-    return deletedComment[0]
+    const [deletedComment] = comments.splice(commentIndex, 1)
+    pubsub.publish('Comment', {
+      comment: {
+        mutation: 'DELETED',
+        data: deletedComment
+      }
+    })
+    return deletedComment
   },
-  updateComment: (parent, { id, data }, { db }, info) => {
+  updateComment: (parent, { id, data }, { db, pubsub }, info) => {
     const comment = db.comments.find(com => com.id === id)
     if (!comment) throw new Error('Comment Not found')
     if (data.text) {
       comment.text = data.text
     }
+    pubsub.publish('Comment', {
+      comment: {
+        mutation: 'UPDATE',
+        data: comment
+      }
+    })
     return comment
   }
 }

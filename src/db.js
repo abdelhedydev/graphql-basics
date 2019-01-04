@@ -1,7 +1,7 @@
 let posts = [
   { id: '1', title: 'Post number 1 title ', body: 'Post number 1 body', published: true, author: '1' },
   { id: '2', title: 'Post number 2 title', body: 'Post number 2 body', published: false, author: '3' },
-  { id: '3', title: 'Post number 3 title', body: 'Post number 3 body', published: true, author: '1' }
+  { id: '3', title: 'Post number 3 title', body: 'Post number 3 body', published: true, author: '2' }
 ]
 let users = [
   { id: '1', name: 'abdelhedi', email: 'sjkjdfnksdf', age: 15 },
