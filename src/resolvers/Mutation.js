@@ -133,7 +133,7 @@ const Mutattion = {
     }
     pubsub.publish('Comment', {
       comment: {
-        mutation: 'UPDATE',
+        mutation: 'UPDATED',
         data: comment
       }
     })
