@@ -26,38 +26,6 @@ const Mutattion = {
     }
     return user
   },
-  createPost: (parent, args, { db }, info) => {
-    const userExist = db.users.some(user => user.id === args.input.author)
-    if (!userExist) throw new Error('User does not exist !')
-    const post = {
-      id: uuidv4(),
-      ...args.input
-    }
-    db.posts.push(post)
-    return post
-  },
-  updatePost: (parent, args, { db }, info) => {
-    const { id, data } = args
-    const post = db.posts.find(post => post.id === id)
-    if (!post) throw new Error('Post does not exist')
-    if (data.title) post.title = data.title
-    if (data.body) post.body = data.body
-    if (data.published) post.published = data.published
-    return post
-  },
-  createComment: (parent, args, { db }, info) => {
-    const { users, posts, comments } = db
-    const userExist = users.some(user => user.id === args.input.author)
-    const postExist = posts.some(post => post.id === args.input.post)
-    const isPublished = (posts.find(post => post.id === args.input.post).published)
-    if (!userExist || !postExist || !isPublished) throw new Error('Input Error was founded')
-    const newComment = {
-      id: uuidv4(),
-      ...args.input
-    }
-    comments.push(newComment)
-    return newComment
-  },
   deleteUser: (parent, args, { db: { users, comments, posts } }, info) => {
     const user = users.find(user => user.id === args.id)
     if (user.length < 1) {
@@ -79,6 +47,25 @@ const Mutattion = {
     users = users.filter(u => u.id !== user.id)
     return user
   },
+  createPost: (parent, args, { db }, info) => {
+    const userExist = db.users.some(user => user.id === args.input.author)
+    if (!userExist) throw new Error('User does not exist !')
+    const post = {
+      id: uuidv4(),
+      ...args.input
+    }
+    db.posts.push(post)
+    return post
+  },
+  updatePost: (parent, args, { db }, info) => {
+    const { id, data } = args
+    const post = db.posts.find(post => post.id === id)
+    if (!post) throw new Error('Post does not exist')
+    if (data.title) post.title = data.title
+    if (data.body) post.body = data.body
+    if (data.published) post.published = data.published
+    return post
+  },
   deletePost: (parent, args, { db }, info) => {
     const postIndex = db.posts.findIndex(post => post.id === args.id)
     if (postIndex === -1) throw new Error('Post does not exist')
@@ -88,11 +75,32 @@ const Mutattion = {
     const deletedPost = db.posts.splice(postIndex, 1)
     return deletedPost[0]
   },
+  createComment: (parent, args, { db }, info) => {
+    const { users, posts, comments } = db
+    const userExist = users.some(user => user.id === args.input.author)
+    const postExist = posts.some(post => post.id === args.input.post)
+    const isPublished = (posts.find(post => post.id === args.input.post).published)
+    if (!userExist || !postExist || !isPublished) throw new Error('Input Error was founded')
+    const newComment = {
+      id: uuidv4(),
+      ...args.input
+    }
+    comments.push(newComment)
+    return newComment
+  },
   deleteComment: (parent, args, { db: { comments } }, info) => {
     const commentIndex = comments.findIndex(comment => comment.id === args.id)
     if (commentIndex === -1) throw new Error('comment does not exist !!')
     const deletedComment = comments.splice(commentIndex, 1)
     return deletedComment[0]
+  },
+  updateComment: (parent, { id, data }, { db }, info) => {
+    const comment = db.comments.find(com => com.id === id)
+    if (!comment) throw new Error('Comment Not found')
+    if (data.text) {
+      comment.text = data.text
+    }
+    return comment
   }
 }
 export { Mutattion as default }
