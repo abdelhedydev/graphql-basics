@@ -86,6 +86,7 @@ const Mutattion = {
       ...args.input
     }
     comments.push(newComment)
+
     pubsub.publish(`Comment ${args.input.post}`, { comment: newComment })
     return newComment
   },
