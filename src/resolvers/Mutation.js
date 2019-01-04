@@ -75,7 +75,7 @@ const Mutattion = {
     const deletedPost = db.posts.splice(postIndex, 1)
     return deletedPost[0]
   },
-  createComment: (parent, args, { db }, info) => {
+  createComment: (parent, args, { db, pubsub }, info) => {
     const { users, posts, comments } = db
     const userExist = users.some(user => user.id === args.input.author)
     const postExist = posts.some(post => post.id === args.input.post)
@@ -86,6 +86,7 @@ const Mutattion = {
       ...args.input
     }
     comments.push(newComment)
+    pubsub.publish(`Comment ${args.input.post}`, { comment: newComment })
     return newComment
   },
   deleteComment: (parent, args, { db: { comments } }, info) => {
